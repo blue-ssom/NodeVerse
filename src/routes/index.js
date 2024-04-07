@@ -2,6 +2,7 @@
 
 const router = require("express").Router()
 const pg = require('../../database/pg')
+// const jwt = require("jsonwebtoken")
 
 router.post("/", async(req,res) => {
     const { id, password } = req.body
@@ -34,6 +35,7 @@ router.post("/", async(req,res) => {
         //     "expiresIn": "30m", 
         // })
 
+        // DB 통신 결과 처리
         result.success = true
         result.message = "로그인 성공!";
         result.data = row;
@@ -47,4 +49,5 @@ router.post("/", async(req,res) => {
     }
 })
 
+// export 작업
 module.exports = router
