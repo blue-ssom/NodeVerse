@@ -3,9 +3,10 @@
 const router = require("express").Router()
 const pool = require("../../database/pg");
 // const jwt = require("jsonwebtoken")
+const {  validateUser, validate } = require('../middlewares/validator');
 
 // 아이디 찾기
-router.get('/find-id', async(req, res) => {
+router.get('/find-id', validateUser, validate, async(req, res) => {
     const { name, phoneNumber} = req.body
     const result = {
         "success" : false,
@@ -35,7 +36,7 @@ router.get('/find-id', async(req, res) => {
 });
 
 // 비밀번호 찾기
-router.get('/find-password', async(req, res) => {
+router.get('/find-password', validateUser, validate, async(req, res) => {
     const { id, name, phoneNumber} = req.body
     const result = {
         "success" : false,
@@ -95,7 +96,7 @@ router.get('/:idx', async(req, res) => {
 });
 
 // 내 회원 정보 수정
-router.put('/', async(req, res) => {
+router.put('/', validateUser, validate, async(req, res) => {
     const { password, name, phoneNumber, email, address } = req.body
     const result = {
             "success" : false,
@@ -126,7 +127,7 @@ router.put('/', async(req, res) => {
 });
 
 // 회원가입
-router.post('/', async(req, res) => {
+router.post('/', validateUser, validate, async(req, res) => {
     const { id, password, name, phoneNumber, email, address } = req.body
     const result = {
         "success" : false,
