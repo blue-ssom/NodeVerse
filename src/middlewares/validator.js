@@ -38,6 +38,34 @@ const validateUser = [
         .matches(/^[A-Za-z\s]+$/).withMessage('주소는 영문 대소문자로만 이루어져야 합니다.')
 ];
 
+// 제목 유효성 검사 미들웨어
+const validateTitle = [
+    body('title')
+        .notEmpty().withMessage('제목을 입력하세요.')
+        .isLength({ min: 1, max: 50 }).withMessage('제목은 1자 이상 50자 이하여야 합니다.')
+        .custom((value, { req }) => {
+            // 제목에 공백만 있는지 확인
+            if (value.trim() === '') {
+                throw new Error('제목은 공백 문자만으로 이루어질 수 없습니다.');
+            }
+            return true;
+        })
+];
+
+// 내용 유효성 검사 미들웨어
+const validateContent = [
+    body('content')
+        .notEmpty().withMessage('내용을 입력하세요.')
+        .isLength({ min: 1, max: 100 }).withMessage('내용은 1자 이상 100자 이하여야 합니다.')
+        .custom((value, { req }) => {
+            // 내용에 공백만 있는지 확인
+            if (value.trim() === '') {
+                throw new Error('내용은 공백 문자만으로 이루어질 수 없습니다.');
+            }
+            return true;
+        })
+];
+
 // 사용자 정보 유효성 검사 결과 반환
 const validate = (req, res, next) => {
     const errors = validationResult(req);
@@ -49,5 +77,7 @@ const validate = (req, res, next) => {
 
 module.exports = {
     validateUser,
+    validateTitle,
+    validateContent,
     validate
 };

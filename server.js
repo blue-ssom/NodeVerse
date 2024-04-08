@@ -14,8 +14,8 @@ app.use("/login", LoginApi)
 const accountRouter = require('./src/routes/account');  // account.js파일 import
 app.use('/account', accountRouter);
 
-// const postRouter = require('./src/routes/post');  // post.js파일 import
-// app.use('/post', postRouter);
+const postRouter = require('./src/routes/post');  // post.js파일 import
+app.use('/post', postRouter);
 
 // const notificationRouter = require('./src/routes/notification');  // notification.js파일 import
 // app.use('/notification', notificationRouter);

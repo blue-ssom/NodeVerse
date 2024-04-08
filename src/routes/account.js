@@ -3,6 +3,7 @@
 const router = require("express").Router()
 const pool = require("../../database/pg");
 // const jwt = require("jsonwebtoken")
+// const checkLogin = require('../middlewares/checkLogin');
 const {  validateUser, validate } = require('../middlewares/validator');
 
 // 아이디 찾기
