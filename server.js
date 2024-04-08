@@ -11,8 +11,8 @@ app.use(express.json())
 const LoginApi =  require("./src/routes/index") // index.js파일 import
 app.use("/login", LoginApi)
 
-// const accountRouter = require('./src/routes/account');  // account.js파일 import
-// app.use('/account', accountRouter);
+const accountRouter = require('./src/routes/account');  // account.js파일 import
+app.use('/account', accountRouter);
 
 // const postRouter = require('./src/routes/post');  // post.js파일 import
 // app.use('/post', postRouter);
