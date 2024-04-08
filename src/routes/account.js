@@ -1,4 +1,5 @@
 // 계정과 관련된 API
+
 const router = require("express").Router()
 const pool = require("../../database/pg");
 // const jwt = require("jsonwebtoken")
@@ -97,6 +98,38 @@ router.get('/:idx', async(req, res) => {
         res.send(result);
     }
 
+});
+
+// 내 회원 정보 수정
+router.put('/', async(req, res) => {
+    const { password, name, phoneNumber, email, address } = req.body
+    const result = {
+            "success" : false,
+            "message" : "",
+            "data" : null
+        }
+   
+    try {
+
+        const sql = `
+            UPDATE scheduler.user 
+            SET password = $1, name = $2, phonenumber = $3, email = $4, address = $5 
+            WHERE idx = $6
+            RETURNING *; -- 수정된 정보를 반환
+        `;
+        const data = await pool.query(sql, [password, name, phoneNumber, email, address, 1]);
+
+        const row = data.rows
+
+        result.success = true;
+        result.message = "내 정보 수정 성공";
+        result.data = row[0];
+        
+    } catch(e) {
+        result.message = e.message;
+    } finally {
+        res.send(result);
+    }
 });
 
 module.exports = router
