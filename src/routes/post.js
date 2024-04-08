@@ -62,8 +62,31 @@ router.post('/', validateTitle, validateContent, validate, async(req, res) => {
     }
 });
 
-// 게시글 추가 C 
-// 게시글 삭제 R
+// 게시글 조회 R
+router.get('/all', async (req, res) => {
+    const result = {
+        "success" : false,
+        "message" : "",
+        "data" : null
+    }
+
+    try {
+        // 게시글 조회
+        const sql = `SELECT * FROM scheduler.post ORDER BY updationdate DESC`;
+        const data = await pg.query(sql);
+        const row = data.rows
+        
+        result.success = true;
+        result.message = "게시글 조회 성공",
+        result.data = row
+
+    } catch(err) {
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+});
+
 // 게시글 수정 U
 // 게시글 삭제 D
 // 게시글 좋아요
