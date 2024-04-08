@@ -88,6 +88,51 @@ router.get('/all', async (req, res) => {
 });
 
 // 게시글 수정 U
+router.put('/:postIdx', validateTitle, validateContent, validate, async(req, res) => {
+    const postIdx = req.params.postIdx; 
+    const { title, content, categoryIdx } = req.body
+    const result = {
+        "success" : false,
+        "message" : "",
+        "data" : null
+    }
+
+    try {
+
+        const updatePostSQL = `
+            UPDATE scheduler.post
+            SET title = $1, content = $2, updationDate = CURRENT_TIMESTAMP
+            WHERE post_idx = $3 AND user_idx = $4
+        `;
+        const updatePostResult = await pg.query(updatePostSQL, [title, content, postIdx, 1]);
+
+        const updateCategorySQL = `
+            UPDATE scheduler.post_category
+            SET category_idx = $1
+            WHERE post_idx = $2
+        `;
+        const updateCategoryResult = await pg.query(updateCategorySQL, [categoryIdx, postIdx]);
+
+        // UPDATE 쿼리의 결과로는 실제로 반환되는 행이 없음
+        const rowCount = updatePostResult.rowCount;
+        if (rowCount === 0) {
+            throw new Error("게시글 수정에 실패하였습니다.");
+        }
+
+
+        result.success = true;
+        result.message = "게시글 수정 성공";
+        result.data = rowCount;;
+        
+    } catch(err) {
+        console.log(err)
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+});
+
+
 // 게시글 삭제 D
 // 게시글 좋아요
 // 게시글 좋아요 취소
