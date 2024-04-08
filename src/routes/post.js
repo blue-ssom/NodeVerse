@@ -71,7 +71,7 @@ router.get('/all', async (req, res) => {
     }
 
     try {
-        // 게시글 조회
+
         const sql = `SELECT * FROM scheduler.post ORDER BY updationdate DESC`;
         const data = await pg.query(sql);
         const row = data.rows
@@ -114,26 +114,64 @@ router.put('/:postIdx', validateTitle, validateContent, validate, async(req, res
         const updateCategoryResult = await pg.query(updateCategorySQL, [categoryIdx, postIdx]);
 
         // UPDATE 쿼리의 결과로는 실제로 반환되는 행이 없음
-        const rowCount = updatePostResult.rowCount;
-        if (rowCount === 0) {
+        if (updatePostResult.rowCount === 0) {
             throw new Error("게시글 수정에 실패하였습니다.");
         }
-
 
         result.success = true;
         result.message = "게시글 수정 성공";
         result.data = rowCount;;
         
     } catch(err) {
-        console.log(err)
         result.message = err.message;
+        console.log(err)
+
     } finally {
         res.send(result);
     }
 });
 
-
 // 게시글 삭제 D
+router.delete('/:postIdx', async(req, res) => {
+    const postIdx = req.params.postIdx; 
+    console.log("postIdx : ", postIdx)
+    const result = {
+        "success" : false,
+        "message" : "",
+    }
+
+    try {
+        // 게시물을 삭제하기 전에 post_category 테이블에서 해당 게시물의 모든 관련 행 삭제
+        const deletePostCategorySQL = `
+            DELETE FROM scheduler.post_category
+            WHERE post_idx = $1
+        `;
+        await pg.query(deletePostCategorySQL, [postIdx]);
+
+        // post_category 테이블의 관련 행 삭제 후, 게시물 삭제
+        const deletePostSQL = `
+            DELETE FROM scheduler.post
+            WHERE post_idx = $1 AND user_idx = $2
+        `;
+        const deletePostResult = await pg.query(deletePostSQL, [postIdx, 1]);
+  
+        //  DELETE 쿼리의 결과로 행을 반환하지 않음
+        // 성공하면 영향을 받은 행의 수를 반환
+        if (deletePostResult.rowCount === 0) {
+            throw new Error("게시글 삭제에 실패하였습니다.");
+        }
+
+        result.success = true;
+        result.message = "게시글 삭제 성공";
+        
+    } catch(err) {
+        result.message = err.message;
+        console.log(err)
+    } finally {
+        res.send(result);
+    }
+});
+
 // 게시글 좋아요
 // 게시글 좋아요 취소
 

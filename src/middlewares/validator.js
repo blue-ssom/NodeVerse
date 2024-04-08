@@ -29,6 +29,7 @@ const validateUser = [
     // 이메일 유효성 검사 규칙
     body('email')
         .notEmpty().withMessage('이메일을 입력하세요.')
+        // isEmail : 이메일 주소 형식 확인 localpart@[domain part]
         .isEmail().withMessage('올바른 이메일 형식이 아닙니다.'),
 
     // 주소 검사
@@ -70,6 +71,7 @@ const validateContent = [
 const validate = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        // 클라이언트가 서버로 전송한 데이터가 요구사항을 충족하지 않거나 유효성 검사를 통과하지 못한 경우
         return res.status(400).json({ errors: errors.array() });
     }
     next(); // 유효성 검사 통과 시 다음 미들웨어 호출
