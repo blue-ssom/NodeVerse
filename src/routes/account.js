@@ -155,4 +155,31 @@ router.post('/', async(req, res) => {
     }
 });
 
+// 회원탈퇴
+router.delete('/',  async(req, res) => {
+    const result = {
+            "success" : false,
+            "message" : "",
+            "data" : null
+        }
+   
+    try {
+
+        const sql = `
+            DELETE FROM scheduler.user 
+            WHERE idx = $1
+        `;
+        const data = await pool.query(sql, [4]);
+        const row = data.rows
+
+        result.success = true;
+        result.message = "회원탈퇴 성공";
+        
+    } catch(err) {
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+});
+
 module.exports = router
