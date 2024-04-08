@@ -3,8 +3,9 @@
 const router = require("express").Router()
 const pg = require('../../database/pg')
 // const jwt = require("jsonwebtoken")
+const {  validateUser, validate } = require('../middlewares/validator');
 
-router.post("/", async(req,res) => {
+router.post("/", validateUser, validate, async(req,res) => {
     const { id, password } = req.body
     const result = {
         "success": false,
