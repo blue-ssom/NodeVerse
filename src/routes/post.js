@@ -328,7 +328,7 @@ router.get('/:postIdx/comments', async (req, res) => {
 })
 
 // 댓글 수정 U
-router.put('/:postIdx/:commentIdx', validateContent, validate, async (req, res) => {
+router.put('/:postIdx/comments/:commentIdx', validateContent, validate, async (req, res) => {
     const postIdx = req.params.postIdx;
     const commentIdx = req.params.commentIdx;
     const { content } = req.body;
@@ -350,7 +350,7 @@ router.put('/:postIdx/:commentIdx', validateContent, validate, async (req, res) 
         // 댓글이 존재하는지 확인
         const existingComment = `SELECT * FROM scheduler.comment WHERE comment_idx = $1`;
         const existingCommentResult = await pg.query(existingComment, [commentIdx]);
-        
+
         if (existingCommentResult.rows.length === 0) {
             throw new Error("해당하는 댓글이 존재하지 않습니다.");
         }
@@ -370,6 +370,48 @@ router.put('/:postIdx/:commentIdx', validateContent, validate, async (req, res) 
 });
 
 // 댓글 삭제 D
+router.delete('/:postIdx/comments/:commentIdx', async (req, res) => {
+    const postIdx = req.params.postIdx;
+    const commentIdx = req.params.commentIdx;
+    const result = {
+        "success": false,
+        "message": "",
+    }
+
+    try {
+        // 입력받은 post_idx와 일치하는 게시물이 있는지 확인
+        const existingPost = `SELECT * FROM scheduler.post WHERE post_idx = $1`;
+        const existingPostResult = await pg.query(existingPost, [postIdx]);
+
+        if (existingPostResult.rows.length === 0) {
+            throw new Error("해당하는 게시물이 존재하지 않습니다.");
+        }
+
+        // 댓글이 존재하는지 확인
+        const existingComment = `SELECT * FROM scheduler.comment WHERE comment_idx = $1`;
+        const existingCommentResult = await pg.query(existingComment, [commentIdx]);
+
+        if (existingCommentResult.rows.length === 0) {
+            throw new Error("해당하는 댓글이 존재하지 않습니다.");
+        }
+
+        const deleteCommentSQL = `
+            DELETE FROM scheduler.comment
+            WHERE comment_idx = $1 AND post_idx = $2
+        `;
+        const deleteCommentResult = await pg.query(deleteCommentSQL, [commentIdx, postIdx]);
+
+        result.success = true;
+        result.message = "댓글 삭제 성공";
+
+    } catch (err) {
+        console.log(err);
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+});
+
 // 댓글 좋아요 및 취소
 
 module.exports = router;
