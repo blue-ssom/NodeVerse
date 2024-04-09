@@ -185,7 +185,6 @@ router.post('/:postIdx/likes', async (req, res) => {
         // 해당 게시글 좋아요 여부 조회(PostgreSQL)
         const isLikedSQL = `SELECT * FROM scheduler.post_likes WHERE post_idx = $1 AND user_idx = $2`;
         const isLikedResult = await pg.query(isLikedSQL, [postIdx, 1]);
-        console.log("게시글 존재?", isLikedResult.rows.length)
 
         if(isLikedResult.rows.length === 0){
             // post_likes에 기록이 없다면 좋아요 추가
@@ -199,7 +198,6 @@ router.post('/:postIdx/likes', async (req, res) => {
             // 해당 게시물의 좋아요 수를 다시 조회
             const updatedPostLikes = await pg.query(`SELECT likes_count FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
             const updatedLikesCount = updatedPostLikes.rows[0].likes_count;
-            console.log("게시물의 좋아요 수:", updatedLikesCount);
 
             // 자신이 작성한 게시글에 좋아요 누른 경우 알림을 추가하지 않음
             if (1 !== postAuthorIdx) {
@@ -223,11 +221,11 @@ router.post('/:postIdx/likes', async (req, res) => {
             // 해당 게시물의 좋아요 수를 다시 조회
             const updatedPostLikes = await pg.query(`SELECT likes_count FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
             const updatedLikesCount = updatedPostLikes.rows[0].likes_count;
-            console.log("게시물의 좋아요 수:", updatedLikesCount);
         }
 
         result.success = true;
-        result.message = "좋아요 처리가 완료";
+        result.message = "좋아요 처리 완료";
+
     } catch (err) {
         console.log(err)
         result.message = err.message;
@@ -236,22 +234,21 @@ router.post('/:postIdx/likes', async (req, res) => {
     }
 });
 
+
 // ***** 댓글 관련 ******
 // 댓글 추가 C
 router.post('/:postIdx/comments', validateContent, validate, async(req, res) => {
-    console.log("댓글추가");
     const postIdx = req.params.postIdx;
-    console.log(postIdx);
     const { content } = req.body;
     const result = {
         "success": false,
         "message": "",
     }
+
     try{
 
         // 입력받은 post_idx와 일치하는 게시물이 있는지 확인
         const existingPost = await pg.query(`SELECT * FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
-        console.log("해당하는 게시물 조회 결과:", existingPost.rows);
         if (existingPost.rows.length === 0) {
             throw new Error("해당하는 게시물이 존재하지 않습니다.");
         }
@@ -277,9 +274,10 @@ router.post('/:postIdx/comments', validateContent, validate, async(req, res) => 
             // MongoDB에 알림 추가
             await pool.db("notification_system").collection("notification").insertOne(notification);
         };
-        
+
         result.success = true;
-        result.message = "댓글 추가 성공!";
+        result.message = "댓글 추가 성공";
+
     } catch (err) {
         console.log(err)
         result.message = err.message;
@@ -289,6 +287,37 @@ router.post('/:postIdx/comments', validateContent, validate, async(req, res) => 
 });
 
 // 댓글 조회 R
+router.get('/:postIdx/comments', async (req, res) => {
+    const postIdx = req.params.postIdx;
+    const result = {
+        "success": false,
+        "message": "",
+    }
+
+    try{
+
+        // 입력받은 post_idx와 일치하는 게시물이 있는지 확인
+        const existingPost = await pg.query(`SELECT * FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
+        if (existingPost.rows.length === 0) {
+            throw new Error("해당하는 게시물이 존재하지 않습니다.");
+        }
+
+        const sql = `SELECT * FROM scheduler.comment where post_idx = $1`;
+        const data = await pg.query(sql,[postIdx]);
+        const row = data.rows
+
+        result.success = true;
+        result.message = "댓글 조회 성공";
+        result.data = row
+
+    } catch (err) {
+        console.log(err)
+        result.message = err.message;
+    } finally {
+        res.send(result)
+    }
+})
+
 // 댓글 수정 U
 // 댓글 삭제 D
 // 댓글 좋아요 및 취소
