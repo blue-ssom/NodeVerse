@@ -56,6 +56,7 @@ router.post('/', validateTitle, validateContent, validate, async(req, res) => {
         };
 
     } catch(err) {
+        console.log(err)
         result.message = err.message;
     } finally {
         res.send(result);
@@ -81,6 +82,7 @@ router.get('/all', async (req, res) => {
         result.data = row
 
     } catch(err) {
+        console.log(err)
         result.message = err.message;
     } finally {
         res.send(result);
@@ -123,9 +125,8 @@ router.put('/:postIdx', validateTitle, validateContent, validate, async(req, res
         result.data = rowCount;;
         
     } catch(err) {
-        result.message = err.message;
         console.log(err)
-
+        result.message = err.message;
     } finally {
         res.send(result);
     }
@@ -165,8 +166,8 @@ router.delete('/:postIdx', async(req, res) => {
         result.message = "게시글 삭제 성공";
         
     } catch(err) {
-        result.message = err.message;
         console.log(err)
+        result.message = err.message;
     } finally {
         res.send(result);
     }
@@ -206,12 +207,9 @@ router.post('/:postIdx/likes', async (req, res) => {
                 // 해당 게시물의 작성자에게 알림을 추가
                 const notificationMessage = `Somi님이 회원님의 게시글을 좋아합니다.`; // 사용자 ID로 변경할 수 있습니다.
                 await pool.db("notification_system").collection("notification").insertOne({
-                    post_id: postIdx,
+                    post_idx: postIdx,
                     message: notificationMessage,
-                    user: {
-                        _id: postAuthorIdx,
-                        id: 1
-                    },
+                    useridx: postAuthorIdx,
                     createdAt: new Date(),
                     type: "like"
                 });
@@ -231,15 +229,65 @@ router.post('/:postIdx/likes', async (req, res) => {
         result.success = true;
         result.message = "좋아요 처리가 완료";
     } catch (err) {
-        result.message = err.message;
         console.log(err)
+        result.message = err.message;
     } finally {
         res.send(result)
     }
 });
 
 // ***** 댓글 관련 ******
-// 댓글 추가 C 
+// 댓글 추가 C
+router.post('/:postIdx/comments', validateContent, validate, async(req, res) => {
+    console.log("댓글추가");
+    const postIdx = req.params.postIdx;
+    console.log(postIdx);
+    const { content } = req.body;
+    const result = {
+        "success": false,
+        "message": "",
+    }
+    try{
+
+        // 입력받은 post_idx와 일치하는 게시물이 있는지 확인
+        const existingPost = await pg.query(`SELECT * FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
+        console.log("해당하는 게시물 조회 결과:", existingPost.rows);
+        if (existingPost.rows.length === 0) {
+            throw new Error("해당하는 게시물이 존재하지 않습니다.");
+        }
+
+        // 댓글 추가
+        await pg.query(`INSERT INTO scheduler.comment(post_idx, user_idx, content) VALUES ($1, $2, $3)`, [postIdx, 1, content]);
+        
+        // 게시글 작성자 조회
+        const postAuthorQuery = `SELECT user_idx FROM scheduler.post WHERE post_idx = $1`;
+        const postAuthorResult = await pg.query(postAuthorQuery, [postIdx]);
+        const postAuthorIdx = postAuthorResult.rows[0].user_idx;
+
+        // 자신이 작성한 게시글에 댓글을 작성한 경우 알림을 추가하지 않음
+        if (postAuthorIdx !== 1) {
+            const notificationMessage = `게시글에 댓글이 추가되었습니다.`;
+            const notification = {
+                post_idx: postIdx,
+                user_idx: postAuthorIdx,
+                message: notificationMessage,
+                created_at: new Date(),
+                type: "comment"
+            };
+            // MongoDB에 알림 추가
+            await pool.db("notification_system").collection("notification").insertOne(notification);
+        };
+        
+        result.success = true;
+        result.message = "댓글 추가 성공!";
+    } catch (err) {
+        console.log(err)
+        result.message = err.message;
+    } finally {
+        res.send(result)
+    }
+});
+
 // 댓글 조회 R
 // 댓글 수정 U
 // 댓글 삭제 D
