@@ -249,13 +249,18 @@ router.post('/:postIdx/comments', validateContent, validate, async(req, res) => 
     try{
 
         // 입력받은 post_idx와 일치하는 게시물이 있는지 확인
-        const existingPost = await pg.query(`SELECT * FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
-        if (existingPost.rows.length === 0) {
+        const existingPostQuery = `SELECT * FROM scheduler.post WHERE post_idx = $1`;
+        const existingPostResult = await pg.query(existingPostQuery, [postIdx]);
+        if (existingPostResult.rows.length === 0) {
             throw new Error("해당하는 게시물이 존재하지 않습니다.");
         }
 
         // 댓글 추가
-        await pg.query(`INSERT INTO scheduler.comment(post_idx, user_idx, content) VALUES ($1, $2, $3)`, [postIdx, 1, content]);
+        const addCommentQuery = `
+        INSERT INTO scheduler.comment (post_idx, user_idx, content)
+        VALUES ($1, $2, $3)
+        `;
+        await pg.query(addCommentQuery, [postIdx, 1, content]);
         
         // 게시글 작성자 조회
         const postAuthorQuery = `SELECT user_idx FROM scheduler.post WHERE post_idx = $1`;
