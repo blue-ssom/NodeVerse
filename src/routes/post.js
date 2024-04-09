@@ -251,6 +251,7 @@ router.post('/:postIdx/comments', validateContent, validate, async(req, res) => 
         // 입력받은 post_idx와 일치하는 게시물이 있는지 확인
         const existingPostQuery = `SELECT * FROM scheduler.post WHERE post_idx = $1`;
         const existingPostResult = await pg.query(existingPostQuery, [postIdx]);
+
         if (existingPostResult.rows.length === 0) {
             throw new Error("해당하는 게시물이 존재하지 않습니다.");
         }
@@ -305,6 +306,7 @@ router.get('/:postIdx/comments', async (req, res) => {
         // 입력받은 post_idx와 일치하는 게시물이 있는지 확인
         const existingPost = `SELECT * FROM scheduler.post WHERE post_idx = $1`;
         const existingPostResult = await pg.query(existingPost, [postIdx]);
+
         if (existingPostResult.rows.length === 0) {
             throw new Error("해당하는 게시물이 존재하지 않습니다.");
         }
@@ -338,14 +340,18 @@ router.put('/:postIdx/:commentIdx', validateContent, validate, async (req, res) 
     try {
 
         // 입력받은 post_idx와 일치하는 게시물이 있는지 확인
-        const existingPost = await pg.query(`SELECT * FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
-        if (existingPost.rows.length === 0) {
+        const existingPost = `SELECT * FROM scheduler.post WHERE post_idx = $1`;
+        const existingPostResult = await pg.query(existingPost, [postIdx]);
+
+        if (existingPostResult.rows.length === 0) {
             throw new Error("해당하는 게시물이 존재하지 않습니다.");
         }
 
         // 댓글이 존재하는지 확인
-        const existingComment = await pg.query(`SELECT * FROM scheduler.comment WHERE comment_idx = $1`, [commentIdx]);
-        if (existingComment.rows.length === 0) {
+        const existingComment = `SELECT * FROM scheduler.comment WHERE comment_idx = $1`;
+        const existingCommentResult = await pg.query(existingComment, [commentIdx]);
+        
+        if (existingCommentResult.rows.length === 0) {
             throw new Error("해당하는 댓글이 존재하지 않습니다.");
         }
 
