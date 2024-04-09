@@ -172,15 +172,77 @@ router.delete('/:postIdx', async(req, res) => {
     }
 });
 
-// 게시글 좋아요
-// 게시글 좋아요 취소
+// 게시글 좋아요 및 취소
+router.post('/:postIdx/likes', async (req, res) => {
+    const postIdx = req.params.postIdx;
+    const result = {
+        "success" : false,
+        "message" : "",
+    }
+
+    try {
+        // 해당 게시글 좋아요 여부 조회(PostgreSQL)
+        const isLikedSQL = `SELECT * FROM scheduler.post_likes WHERE post_idx = $1 AND user_idx = $2`;
+        const isLikedResult = await pg.query(isLikedSQL, [postIdx, 1]);
+        console.log("게시글 존재?", isLikedResult.rows.length)
+
+        if(isLikedResult.rows.length === 0){
+            // post_likes에 기록이 없다면 좋아요 추가
+            await pg.query(`INSERT INTO scheduler.post_likes (post_idx, user_idx) VALUES ($1, $2)`, [postIdx, 1]);
+            // 해당 게시물의 likes +1
+            await pg.query(`UPDATE scheduler.post SET likes_count = likes_count + 1 WHERE post_idx = $1`, [postIdx]);
+
+            // 해당 게시물의 작성자의 사용자 Idx를 가져오기
+            const postAuthorResult = await pg.query(`SELECT user_idx FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
+            const postAuthorIdx = postAuthorResult.rows[0].user_idx;
+            // 해당 게시물의 좋아요 수를 다시 조회
+            const updatedPostLikes = await pg.query(`SELECT likes_count FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
+            const updatedLikesCount = updatedPostLikes.rows[0].likes_count;
+            console.log("게시물의 좋아요 수:", updatedLikesCount);
+
+            // 자신이 작성한 게시글에 좋아요 누른 경우 알림을 추가하지 않음
+            if (1 !== postAuthorIdx) {
+                console.log(1)
+                // 해당 게시물의 작성자에게 알림을 추가
+                const notificationMessage = `Somi님이 회원님의 게시글을 좋아합니다.`; // 사용자 ID로 변경할 수 있습니다.
+                await pool.db("notification_system").collection("notification").insertOne({
+                    post_id: postIdx,
+                    message: notificationMessage,
+                    user: {
+                        _id: postAuthorIdx,
+                        id: 1
+                    },
+                    createdAt: new Date(),
+                    type: "like"
+                });
+            }
+        } else {
+            console.log(2)
+            // post_likes에 기록이 있다면 좋아요 취소
+            await pg.query(`DELETE FROM scheduler.post_likes WHERE post_idx = $1 AND user_idx = $2`, [postIdx, 1]);
+            // 해당 게시물의 likes -1
+            await pg.query(`UPDATE scheduler.post SET likes_count = likes_count - 1 WHERE post_idx = $1 AND likes_count > 0`, [postIdx]);
+            // 해당 게시물의 좋아요 수를 다시 조회
+            const updatedPostLikes = await pg.query(`SELECT likes_count FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
+            const updatedLikesCount = updatedPostLikes.rows[0].likes_count;
+            console.log("게시물의 좋아요 수:", updatedLikesCount);
+        }
+
+        result.success = true;
+        result.message = "좋아요 처리가 완료";
+    } catch (err) {
+        result.message = err.message;
+        console.log(err)
+    } finally {
+        res.send(result)
+    }
+});
 
 // ***** 댓글 관련 ******
 // 댓글 추가 C 
-// 댓글 삭제 R
+// 댓글 조회 R
 // 댓글 수정 U
 // 댓글 삭제 D
-// 댓글 좋아요
-// 댓글 좋아요 취소
+// 댓글 좋아요 및 취소
 
 module.exports = router;
