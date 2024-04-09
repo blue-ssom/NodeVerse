@@ -319,6 +319,43 @@ router.get('/:postIdx/comments', async (req, res) => {
 })
 
 // 댓글 수정 U
+router.put('/:postIdx/:commentIdx', validateContent, validate, async (req, res) => {
+    const postIdx = req.params.postIdx;
+    const commentIdx = req.params.commentIdx;
+    const { content } = req.body;
+    const result = {
+        "success": false,
+        "message": "",
+    };
+
+    try {
+
+        // 입력받은 post_idx와 일치하는 게시물이 있는지 확인
+        const existingPost = await pg.query(`SELECT * FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
+        if (existingPost.rows.length === 0) {
+            throw new Error("해당하는 게시물이 존재하지 않습니다.");
+        }
+
+        // 댓글이 존재하는지 확인
+        const existingComment = await pg.query(`SELECT * FROM scheduler.comment WHERE comment_idx = $1`, [commentIdx]);
+        if (existingComment.rows.length === 0) {
+            throw new Error("해당하는 댓글이 존재하지 않습니다.");
+        }
+
+        const sql = `UPDATE scheduler.comment SET content = $1 WHERE comment_idx = $2`;
+        const data = await pg.query(sql,[content, commentIdx]);
+
+        result.success = true;
+        result.message = "댓글 수정 성공";
+
+    } catch (err) {
+        console.log(err);
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+});
+
 // 댓글 삭제 D
 // 댓글 좋아요 및 취소
 
