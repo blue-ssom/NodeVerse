@@ -188,16 +188,17 @@ router.post('/:postIdx/likes', async (req, res) => {
 
         if(isLikedResult.rows.length === 0){
             // post_likes에 기록이 없다면 좋아요 추가
-            await pg.query(`INSERT INTO scheduler.post_likes (post_idx, user_idx) VALUES ($1, $2)`, [postIdx, 1]);
+            const addLikeSQL = `INSERT INTO scheduler.post_likes (post_idx, user_idx) VALUES ($1, $2)`;
+            await pg.query(addLikeSQL, [postIdx, userIdx]);
+
             // 해당 게시물의 likes +1
-            await pg.query(`UPDATE scheduler.post SET likes_count = likes_count + 1 WHERE post_idx = $1`, [postIdx]);
+            const updateLikesSQL = `UPDATE scheduler.post SET likes_count = likes_count + 1 WHERE post_idx = $1`;
+            await pg.query(updateLikesSQL, [postIdx]);
 
             // 해당 게시물의 작성자의 사용자 Idx를 가져오기
-            const postAuthorResult = await pg.query(`SELECT user_idx FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
+            const postAuthorResult = `SELECT user_idx FROM scheduler.post WHERE post_idx = $1`;
+            await pg.query(postAuthorResult, [postIdx]);
             const postAuthorIdx = postAuthorResult.rows[0].user_idx;
-            // 해당 게시물의 좋아요 수를 다시 조회
-            const updatedPostLikes = await pg.query(`SELECT likes_count FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
-            const updatedLikesCount = updatedPostLikes.rows[0].likes_count;
 
             // 자신이 작성한 게시글에 좋아요 누른 경우 알림을 추가하지 않음
             if (1 !== postAuthorIdx) {
@@ -215,12 +216,12 @@ router.post('/:postIdx/likes', async (req, res) => {
         } else {
             console.log(2)
             // post_likes에 기록이 있다면 좋아요 취소
-            await pg.query(`DELETE FROM scheduler.post_likes WHERE post_idx = $1 AND user_idx = $2`, [postIdx, 1]);
+            const removeLikeSQL = `DELETE FROM scheduler.post_likes WHERE post_idx = $1 AND user_idx = $2`;
+            await pg.query(removeLikeSQL, [postIdx, userIdx]);
+
             // 해당 게시물의 likes -1
-            await pg.query(`UPDATE scheduler.post SET likes_count = likes_count - 1 WHERE post_idx = $1 AND likes_count > 0`, [postIdx]);
-            // 해당 게시물의 좋아요 수를 다시 조회
-            const updatedPostLikes = await pg.query(`SELECT likes_count FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
-            const updatedLikesCount = updatedPostLikes.rows[0].likes_count;
+            const updateLikesSQL = `UPDATE scheduler.post SET likes_count = likes_count - 1 WHERE post_idx = $1 AND likes_count > 0`;
+            await pg.query(updateLikesSQL, [postIdx]);
         }
 
         result.success = true;
