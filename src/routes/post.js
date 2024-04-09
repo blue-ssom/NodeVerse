@@ -303,8 +303,9 @@ router.get('/:postIdx/comments', async (req, res) => {
     try{
 
         // 입력받은 post_idx와 일치하는 게시물이 있는지 확인
-        const existingPost = await pg.query(`SELECT * FROM scheduler.post WHERE post_idx = $1`, [postIdx]);
-        if (existingPost.rows.length === 0) {
+        const existingPost = `SELECT * FROM scheduler.post WHERE post_idx = $1`;
+        const existingPostResult = await pg.query(existingPost, [postIdx]);
+        if (existingPostResult.rows.length === 0) {
             throw new Error("해당하는 게시물이 존재하지 않습니다.");
         }
 
