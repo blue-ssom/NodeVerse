@@ -1,4 +1,5 @@
 // 게시글과 관련된 API
+
 const express = require('express');
 const router = express.Router();
 const pg = require('../../database/pg')
@@ -413,5 +414,82 @@ router.delete('/:postIdx/comments/:commentIdx', async (req, res) => {
 });
 
 // 댓글 좋아요 및 취소
+router.post('/:postIdx/comments/:commentIdx/likes', async (req, res) => {
+    const postIdx = req.params.postIdx;
+    const commentIdx = req.params.commentIdx;
+    const result = {
+        "success" : false,
+        "message" : "",
+    }
+
+    try {
+        // 입력받은 post_idx와 일치하는 게시물이 있는지 확인
+        const existingPost = `SELECT * FROM scheduler.post WHERE post_idx = $1`;
+        const existingPostResult = await pg.query(existingPost, [postIdx]);
+
+        if (existingPostResult.rows.length === 0) {
+            throw new Error("해당하는 게시물이 존재하지 않습니다.");
+        }
+
+        // 댓글이 존재하는지 확인
+        const existingComment = `SELECT * FROM scheduler.comment WHERE comment_idx = $1`;
+        const existingCommentResult = await pg.query(existingComment, [commentIdx]);
+
+        if (existingCommentResult.rows.length === 0) {
+            throw new Error("해당하는 댓글이 존재하지 않습니다.");
+        }
+
+        // 해당 댓글 좋아요 여부 조회(PostgreSQL)
+        const isLikedSQL = `SELECT * FROM scheduler.comment_likes WHERE comment_idx = $1 AND user_idx = $2`;
+        const isLikedResult = await pg.query(isLikedSQL, [commentIdx, 1]);
+
+        if(isLikedResult.rows.length === 0){
+            // comment_likes에 기록이 없다면 좋아요 추가
+            const addLikeSQL = `INSERT INTO scheduler.comment_likes (comment_idx, user_idx) VALUES ($1, $2)`;
+            await pg.query(addLikeSQL, [commentIdx, 1]);
+
+            // 해당 댓글의 likes +1
+            const updateLikesSQL = `UPDATE scheduler.comment SET likes_count = likes_count + 1 WHERE comment_idx = $1`;
+            await pg.query(updateLikesSQL, [commentIdx]);
+
+            // 게시글 작성자 조회
+            const postAuthorQuery = `SELECT user_idx FROM scheduler.post WHERE post_idx = $1`;
+            const postAuthorResult = await pg.query(postAuthorQuery, [postIdx]);
+            const postAuthorIdx = postAuthorResult.rows[0].user_idx;
+
+            // 자신이 작성한 댓글에 좋아요 누른 경우 알림을 추가하지 않음
+            if (1 !==  postAuthorIdx) {
+                console.log(1)
+                // 해당 댓글의 작성자에게 알림을 추가
+                const notificationMessage = `Somi님이 회원님의 댓글을 좋아합니다.`;
+                await pool.db("notification_system").collection("notification").insertOne({
+                    post_idx: postIdx,
+                    message: notificationMessage,
+                    userIdx: postAuthorIdx,
+                    createdAt: new Date(),
+                    type: "like"
+                });
+            }
+        } else {
+            console.log(2)
+            // comment_likes에 기록이 있다면 좋아요 취소
+            const removeLikeSQL = `DELETE FROM scheduler.comment_likes WHERE comment_idx = $1 AND user_idx = $2`;
+            await pg.query(removeLikeSQL, [commentIdx, 1]);
+
+            // 해당 댓글의 likes -1
+            const updateLikesSQL = `UPDATE scheduler.comment SET likes_count = likes_count - 1 WHERE comment_idx = $1 AND likes_count > 0`;
+            await pg.query(updateLikesSQL, [commentIdx]);
+        }
+
+        result.success = true;
+        result.message = "댓글 좋아요 처리 완료";
+
+    } catch (err) {
+        console.log(err)
+        result.message = err.message;
+    } finally {
+        res.send(result)
+    }
+});
 
 module.exports = router;

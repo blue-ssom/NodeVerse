@@ -17,8 +17,8 @@ app.use('/account', accountRouter);
 const postRouter = require('./src/routes/post');  // post.js파일 import
 app.use('/post', postRouter);
 
-// const notificationRouter = require('./src/routes/notification');  // notification.js파일 import
-// app.use('/notification', notificationRouter);
+const notificationRouter = require('./src/routes/notification');  // notification.js파일 import
+app.use('/notification', notificationRouter);
 
 // Web Server 실행 코드
 app.listen(port, () => {
