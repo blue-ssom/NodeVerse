@@ -35,6 +35,7 @@ router.get('/', async (req, res) => {
 
     } catch (err) {
         console.log(err)
+        result.message = err.message;
     } finally {
         res.send(result)
     }
