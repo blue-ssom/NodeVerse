@@ -2,9 +2,11 @@
 
 const router = require("express").Router()
 const pool = require("../../database/pg");
-// const jwt = require("jsonwebtoken")
-// const checkLogin = require('../middlewares/checkLogin');
+const jwt = require("jsonwebtoken")
+const checkLogin = require('../middlewares/checkLogin');
 const {  validateUser, validate } = require('../middlewares/validator');
+const UploadBucket = require('../middlewares/bucket');
+const upload = new UploadBucket();
 
 // 아이디 찾기
 router.get('/find-id', validateUser, validate, async(req, res) => {
@@ -67,8 +69,8 @@ router.get('/find-password', validateUser, validate, async(req, res) => {
 });
 
 // 특정 user 정보 보기
-router.get('/:idx', async(req, res) => {
-    const userIdx = req.params.idx
+router.get('/:idx', checkLogin, async(req, res) => {
+    const userIdx = req.decoded.idx // Token에 저장되어있는 사용자 idx
     const result = {
         "success" : false,
         "message" : "",
@@ -128,7 +130,12 @@ router.put('/', validateUser, validate, async(req, res) => {
 });
 
 // 회원가입
-router.post('/', validateUser, validate, async(req, res) => {
+router.post('/', upload.profileImage('image'), async(req, res) => {
+     // 이미지 업로드가 완료되었는지 확인
+     if (!req.file || !req.file.location) {
+        return res.status(400).json({ success: false, message: "Uploaded image key not found" });
+    }
+
     const { id, password, name, phoneNumber, email, address } = req.body
     const result = {
         "success" : false,
@@ -137,13 +144,14 @@ router.post('/', validateUser, validate, async(req, res) => {
     }
 
     try {
-
+        
+        // 업로드된 파일 처리 로직 추가
+        const profileImagePath = req.file.location; // S3에 업로드된 이미지의 경로
         const sql = `
-            INSERT INTO scheduler.user (id, password, name, phonenumber, email, address) 
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING *;
-        `;
-        const data = await pool.query(sql, [id, password, name, phoneNumber, email, address]);
+        INSERT INTO scheduler.user (id, password, name, phonenumber, email, address, profile_image_key) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *;`; // RETURNING을 사용하여 삽입된 데이터를 반환
+        const data = await pool.query(sql, [id, password, name, phoneNumber, email, address, profileImagePath]);
         const row = data.rows
 
         result.success = true;

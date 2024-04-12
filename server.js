@@ -3,6 +3,11 @@ const dotenv = require('dotenv').config();  // dotenv 패키지를 사용하여 
 const mongodb = require("./database/mongodb")   // mongoDB연결
 const pg = require('./database/pg') // postgreSQL연결
 const logData = require('./src/middlewares/logData');
+const AWS = require("aws-sdk");
+const multer = require('multer');
+const multerS3 = require('multer-s3')
+
+
 
 const app = express()
 const port = 8000
@@ -21,8 +26,12 @@ app.use('/post', postRouter);
 const notificationRouter = require('./src/routes/notification');  // notification.js파일 import
 app.use('/notification', notificationRouter);
 
+const bucketRouter = require('./src/middlewares/bucket');  //bucket.js파일 import
+app.use('/bucket', bucketRouter);
+
+
 // logData 미들웨어 등록
-app.use(logData);
+// app.use(logData);
 
 // Web Server 실행 코드
 app.listen(port, () => {

@@ -5,10 +5,8 @@ const pg = require('../../database/pg')
 const jwt = require("jsonwebtoken")
 const { loginValidate, validate } = require('../middlewares/validator');
 
-router.post("/", loginValidate, validate, async(req,res) => {
+router.post("/", loginValidate,validate, async(req,res) => {
     const { id, password } = req.body
-    console.log(id)
-    console.log(password)
     const result = {
         "success" : false,
         "message" : "",
@@ -19,8 +17,7 @@ router.post("/", loginValidate, validate, async(req,res) => {
         // DB통신 
         const sql = `SELECT * FROM scheduler.user WHERE id = $1 AND password = $2`;
         const data = await pg.query(sql, [id, password]);
-        console.log(data)
-
+ 
         // DB 후처리
         const row = data.rows
 

@@ -1,3 +1,5 @@
+// Express-validator : 요청이나 데이터들이 유효한지 확인하는 유효성 검사 모듈
+// 코드만 봐도 직관적이고, 어떤 부분의 유효성을 검사하는지 알 수 있음, 통일성 있게 구성할 수 있음
 const { body, validationResult } = require('express-validator');
 
 const loginValidate = [
@@ -80,11 +82,14 @@ const validateContent = [
         })
 ];
 
+// 검사 미들웨어 분리
 // 사용자 정보 유효성 검사 결과 반환
 const validate = (req, res, next) => {
     const errors = validationResult(req);
+    // 에러가 존재하는 경우
     if (!errors.isEmpty()) {
-        // 클라이언트가 서버로 전송한 데이터가 요구사항을 충족하지 않거나 유효성 검사를 통과하지 못한 경우
+        // 400 : 클라이언트 오류를 감지해 요청을 처리할 수 없거나, 하지 않는다는 것을 의미
+        // 클라이언트가 서버로 전송한 데이터가 요구사항을 충족하지 않거나 유효성 검사를 통과하지 못한 경우 에러들을 배열형태로 반환
         return res.status(400).json({ errors: errors.array() });
     }
     next(); // 유효성 검사 통과 시 다음 미들웨어 호출
