@@ -68,7 +68,7 @@ router.get('/find-password', validateUser, validate, async(req, res) => {
    }
 });
 
-// 특정 user 정보 보기
+// 특정 user 정보 보기(S3)
 router.get('/:idx', checkLogin, async(req, res) => {
     const userIdx = req.decoded.idx // Token에 저장되어있는 사용자 idx
     const result = {
@@ -129,10 +129,44 @@ router.put('/', validateUser, validate, async(req, res) => {
     }
 });
 
-// 회원가입
+// 프로필 이미지만 변경하는 API(S3)
+router.put('/profile-image', checkLogin, upload.profileImage('image'), async (req, res) => {
+    const userIdx = req.decoded.idx; // Token에 저장되어 있는 사용자 idx
+    console.log(userIdx)
+    const result = {
+        "success" : false,
+        "message" : "",
+        "data" : null
+    }
+
+    try {
+        // 이미지 업로드가 완료되었는지 확인
+        if (!req.file || !req.file.location) {
+            return res.status(400).json({ success: false, message: "Uploaded image key not found" });
+        }
+
+        // 업로드된 파일 처리 로직 추가
+        const profileImagePath = req.file.location; // S3에 업로드된 이미지의 경로
+        const sql = `
+        UPDATE scheduler.user SET profile_image_key = $1 WHERE idx = $2 RETURNING *;`;
+        const data = await pool.query(sql, [profileImagePath, userIdx]);
+        const row = data.rows
+
+        result.success = true;
+        result.message = "프로필 이미지 변경 성공";
+        result.data = row[0];
+
+    } catch (err) {
+        result.message = err.message;
+    } finally {
+        res.send(result);
+    }
+})
+
+// 회원가입(S3)
 router.post('/', upload.profileImage('image'), async(req, res) => {
-     // 이미지 업로드가 완료되었는지 확인
-     if (!req.file || !req.file.location) {
+    // 이미지 업로드가 완료되었는지 확인
+    if (!req.file || !req.file.location) {
         return res.status(400).json({ success: false, message: "Uploaded image key not found" });
     }
 

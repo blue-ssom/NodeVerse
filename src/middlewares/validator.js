@@ -12,7 +12,7 @@ const loginValidate = [
     body('password')
         .notEmpty().withMessage('비밀번호를 입력하세요.')
         .matches(/^[a-zA-Z0-9]+$/).withMessage('비밀번호는 영문자와 숫자로만 이루어져야 합니다.')
-        .isLength({ min: 8, max: 16 }).withMessage('비밀번호는 8자 이상 16자 이하여야 합니다.'),
+        .isLength({ min: 4, max: 16 }).withMessage('비밀번호는 ４자 이상 16자 이하여야 합니다.'),
 ]
 
 // 사용자 정보 유효성 검사 미들웨어
