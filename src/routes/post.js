@@ -6,11 +6,11 @@ const pg = require('../../database/pg')
 const mongodb = require("../../database/mongodb")
 // const checkLogin = require('../middlewares/checkLogin');
 // const jwt = require("jsonwebtoken")
-const { validateTitle, validateContent, validateUser, validate } = require('../middlewares/validator');
+const { validate } = require('../middlewares/validator');
 
 // ***** 게시글 관련 *****
 // 게시글 추가 C
-router.post('/', validateTitle, validateContent, validate, async(req, res) => {
+router.post('/', async(req, res) => {
     const { title, content, categoryIdx } = req.body
     const result = {
         "success" : false,
@@ -91,7 +91,7 @@ router.get('/all', async (req, res) => {
 });
 
 // 게시글 수정 U
-router.put('/:postIdx', validateTitle, validateContent, validate, async(req, res) => {
+router.put('/:postIdx', async(req, res) => {
     const postIdx = req.params.postIdx; 
     const { title, content, categoryIdx } = req.body
     const result = {
@@ -239,7 +239,7 @@ router.post('/:postIdx/likes', async (req, res) => {
 
 // ***** 댓글 관련 ******
 // 댓글 추가 C
-router.post('/:postIdx/comments', validateContent, validate, async(req, res) => {
+router.post('/:postIdx/comments', async(req, res) => {
     const postIdx = req.params.postIdx;
     const { content } = req.body;
     const result = {
@@ -329,7 +329,7 @@ router.get('/:postIdx/comments', async (req, res) => {
 })
 
 // 댓글 수정 U
-router.put('/:postIdx/comments/:commentIdx', validateContent, validate, async (req, res) => {
+router.put('/:postIdx/comments/:commentIdx', async (req, res) => {
     const postIdx = req.params.postIdx;
     const commentIdx = req.params.commentIdx;
     const { content } = req.body;
