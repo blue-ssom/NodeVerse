@@ -17,7 +17,7 @@ app.use(express.json())
 app.use('/img', express.static('public/img'));
 
 // logData 미들웨어 등록
-app.use(logData);
+// app.use(logData);
 
 const accountRouter = require('./src/routes/account');  // account.js파일 import
 app.use('/account', accountRouter);

@@ -23,7 +23,7 @@ router.post("/login", loginValidate, validate, async(req,res) => {
         
         // DB통신 
         const sql = `SELECT * FROM scheduler.user WHERE id = $1 AND password = $2`;
-        const data = await pg.query(sql, [id, password]);
+        const data = await pool.query(sql, [id, password]);
  
         // DB 후처리
         const row = data.rows
@@ -46,10 +46,7 @@ router.post("/login", loginValidate, validate, async(req,res) => {
         })
 
         await redis.connect()
-        // 집합(set)에 새로운 멤버를 추가하는 명령어
         await redis.sAdd(`today`, id)
-
-        // sorted set에 새로운 멤버를 추가하는 명령어
         await redis.zAdd('user_login', {
             score : Date.now(), 
             value : id
@@ -58,7 +55,6 @@ router.post("/login", loginValidate, validate, async(req,res) => {
         // DB 통신 결과 처리
         result.success = true
         result.message = "로그인 성공!";
-        result.data = row;
         result.token = token;
         
     } catch (err) {
@@ -191,7 +187,7 @@ router.put('/', checkLogin, updateUserInfoValidate, validate, async(req, res) =>
 });
 
 // 프로필 이미지 변경 API(S3)
-router.put('/profile-image', checkLogin, imageValidate, upload.profileImage('image'), async (req, res) => {
+router.put('/profile-image', checkLogin, upload.profileImage('image'), async (req, res) => {
     const userIdx = req.decoded.idx; // Token에 저장되어 있는 사용자 idx
     console.log(userIdx)
     const { file } = req; // 업로드된 파일
@@ -221,7 +217,7 @@ router.put('/profile-image', checkLogin, imageValidate, upload.profileImage('ima
 })
 
 // 프로필 이미지 변경 API(EBS)
-router.put('/profile-image/ebs', checkLogin, imageValidate, uploader.single('image'), async (req, res) => {
+router.put('/profile-image/ebs', checkLogin, uploader.single('image'), async (req, res) => {
     const userIdx = req.decoded.idx; // Token에 저장되어 있는 사용자 idx
     const { file } = req; // 업로드된 파일
 
@@ -366,7 +362,6 @@ router.get('/visitors/count', async (req, res) => {
 
     try {
         await redis.connect()
-        // scard 함수를 프로미스로 변환
         const count = await redis.sCard('today');
 
         result.success = true;
