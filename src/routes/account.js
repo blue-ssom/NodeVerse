@@ -363,9 +363,13 @@ router.get('/visitors/count', async (req, res) => {
     try {
         await redis.connect()
         const count = await redis.sCard('today');
+        const recentVisitorsCount = await redis.zCard('user_login');
 
         result.success = true;
-        result.data = count;
+        result.data = {
+            count,
+            recentVisitorsCount
+        }
         result.message = "로그인 수 조회 성공";
 
     } catch (err) {
@@ -386,24 +390,26 @@ router.get('/visitors/list', async (req, res) => {
     try {
         await redis.connect()
         
-        const members = redis.zRange('user_login', 0, 4, 'WITHSCORES')
-        members.reverse()
+        // Redis에서 멤버들을 가져와 배열로 변환
+        const members = await redis.zRange('user_login', 0, 4, 'WITHSCORES');
+        const usernames = Array.from(members);
 
         // 최근 로그인 사용자를 저장할 리스트 초기화
         const recentLoginUsers = [];
 
-        // members 배열에서 홀수 인덱스에는 사용자 이름이 저장되어 있음
-        for (let i = 0; i < members.length; i ++) {
-            const user = members[i];
+        // usernames 배열에서 홀수 인덱스에는 사용자 이름이 저장되어 있음
+        for (let i = 0; i < usernames.length; i ++) {
+            const user = usernames[i];
             recentLoginUsers.push(user);
         }
 
         // 중복 제거
         const uniqueUsers = Array.from(new Set(recentLoginUsers));
+        uniqueUsers.reverse()
 
         // 순서를 유지하면서 최대 5명의 사용자 선택
         const top5Users = uniqueUsers.slice(0, 5);
-        result.data = {'최근 접속자 목록': top5Users,};
+        result.data = {'최근 접속자 목록': top5Users};
 
     } catch (err) {
         console.log(err)
@@ -412,5 +418,6 @@ router.get('/visitors/list', async (req, res) => {
         res.send(result)
     }
 });
+
 
 module.exports = router
