@@ -327,6 +327,7 @@ router.post('/ebs', signUpValidate, uploader.single('image'), async (req, res) =
 
 // 회원탈퇴
 router.delete('/', checkLogin, async(req, res) => {
+    const userIdx = req.decoded.idx // Token에 저장되어있는 사용자 idx
     const result = {
             "success" : false,
             "message" : "",
@@ -339,7 +340,7 @@ router.delete('/', checkLogin, async(req, res) => {
             DELETE FROM scheduler.user 
             WHERE idx = $1
         `;
-        const data = await pool.query(sql, [4]);
+        const data = await pool.query(sql, [userIdx]);
         const row = data.rows
 
         result.success = true;
@@ -418,6 +419,5 @@ router.get('/visitors/list', async (req, res) => {
         res.send(result)
     }
 });
-
 
 module.exports = router
