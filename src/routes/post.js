@@ -4,14 +4,14 @@ const express = require('express');
 const router = express.Router();
 const pg = require('../../database/pg')
 const mongodb = require("../../database/mongodb")
-// const checkLogin = require('../middlewares/checkLogin');
-// const jwt = require("jsonwebtoken")
+const checkLogin = require('../middlewares/checkLogin');
+const jwt = require("jsonwebtoken")
 const { validate } = require('../middlewares/validator');
 
 // ***** 게시글 관련 *****
 // 게시글 추가 C
 router.post('/', async(req, res) => {
-    const { title, content, categoryIdx } = req.body
+    console.log("post에서 userIdx : ", req.decoded.idx)
     const result = {
         "success" : false,
         "message" : "",
@@ -66,6 +66,7 @@ router.post('/', async(req, res) => {
 
 // 게시글 조회 R
 router.get('/all', async (req, res) => {
+    const { title, content, categoryIdx } = req.body
     const result = {
         "success" : false,
         "message" : "",
@@ -81,6 +82,8 @@ router.get('/all', async (req, res) => {
         result.success = true;
         result.message = "게시글 조회 성공",
         result.data = row
+
+        res.result = result;
 
     } catch(err) {
         console.log(err)

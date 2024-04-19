@@ -16,7 +16,6 @@ router.post("/login", loginValidate, validate, async(req,res) => {
     const result = {
         "success" : false,
         "message" : "",
-        "data" : null
     }
 
     try{
@@ -56,6 +55,8 @@ router.post("/login", loginValidate, validate, async(req,res) => {
         result.success = true
         result.message = "로그인 성공!";
         result.token = token;
+
+        res.result = result;
         
     } catch (err) {
         console.log(err)
